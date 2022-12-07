@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>climate App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            background-color: #f1f1f1;
+        }
+        
+        #container {
+            width: 960px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        
+        #location {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        #climate {
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="location">
+        </div>
+        <div id="climate">
+        </div>
+    </div>
+    <script>
+        // Get geo location 
+        navigator.geolocation.getCurrentPosition(success, error);
+
+        function success(position) {
+            // Get latitude and longitude
+            var latitude = position.coords.latitude;
+            var longitude = position.coords.longitude;
+
+            // Get location using lat and lng
+            var locationURL = "https://maps.googleapis.com/maps/api/geocode/json?latlng=" + latitude + "," + longitude + "&sensor=true";
+
+            // Make request for location
+            var locationRequest = new XMLHttpRequest();
+            locationRequest.open('GET', locationURL, true);
+            locationRequest.onload = function() {
+                if (locationRequest.status >= 200 && locationRequest.status < 400) {
+                    var locationData = JSON.parse(locationRequest.responseText);
+                    var cityName = locationData.results[0].address_components[3].long_name;
+
+                    // Set location HTML
+                    document.getElementById('location').innerHTML = cityName;
+
+                    // Get climate using lat and lng 
+                    var climateURL = "https://api.openclimatemap.org/data/2.5/climate?lat=" + latitude + "&lon=" + longitude + "&appid=YOUR_API_KEY";
+
+                    // Make request for climate 
+                    var climateRequest = new XMLHttpRequest();
+                    climateRequest.open('GET', climateURL, true);
+                    climateRequest.onload = function() {
+                        if (climateRequest.status >= 200 && climateRequest.status < 400) {
+                            var climateData = JSON.parse(climateRequest.responseText);
+                            var temperature = (climateData.main.temp - 273.15) * 1.8 + 32; // Convert from Kelvin to Fahrenheit
+                            var climateConditions = climateData.climate[0].main;
+
+                            // Set climate HTML
+                            document.getElementById('climate').innerHTML = temperature + "°F and " + climateConditions;
+                        } else {
+                            console.log('We reached our target server, but it returned an error');
+                        }
+                    };
+                    climateRequest.onerror = function() {
+                        console.log('There was a connection error of some sort');
+                    };
+
+                    climateRequest.send();
+                } else {
+                    console.log('We reached our target server, but it returned an error');
+                }
+            };
+            locationRequest.onerror = function() {
+                console.log('There was a connection error of some sort');
+            };
+
+            locationRequest.send();
+        }
+
+        function error() {
+            console.log("Unable to retrieve your location");
+        }
+    </script>
+</body>
+
+</html>
